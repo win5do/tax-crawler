@@ -65,6 +65,8 @@ func register(cb ...Callback) {
 func site_shanghai() ([]News, error) {
 	var r []News
 
+	domain := "http://shanghai.chinatax.gov.cn/zcfw/zcfgk/"
+
 	c := colly.NewCollector()
 
 	c.OnHTML("ul#zcfglist > li", func(e *colly.HTMLElement) {
@@ -78,12 +80,12 @@ func site_shanghai() ([]News, error) {
 			Subject:  "上海税务局",
 			Title:    e.ChildText(".title"),
 			Keywords: e.ChildText(".wh"),
-			Url:      e.ChildAttr("a[href]", "href"),
+			Url:      domain + e.ChildAttr("a[href]", "href")[2:], // `./xx/yy.html`
 			Date:     NewDate(date),
 		})
 	})
 
-	err := c.Visit("http://shanghai.chinatax.gov.cn/zcfw/zcfgk/")
+	err := c.Visit(domain)
 	if err != nil {
 		return nil, errors2.WithStack(err)
 	}

@@ -12,7 +12,9 @@ func init() {
 }
 
 func TestSite1(t *testing.T) {
-	site_shanghai()
+	r, err := site_shanghai()
+	require.NoError(t, err)
+	t.Logf("%+v", r)
 }
 
 func TestSite_country(t *testing.T) {
