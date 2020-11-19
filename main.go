@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/tidwall/gjson"
+	"net/http"
 	"net/url"
 	"text/template"
 	"time"
@@ -91,7 +92,7 @@ func site_shanghai() ([]News, error) {
 	return r, nil
 }
 
-func site_country() ([]News, error) {
+func site_country_del() ([]News, error) {
 	var r []News
 
 	vals, err := url.ParseQuery("timeOption=0&page=1&pageSize=10&keyPlace=1&sort=dateDesc&qt=*")
@@ -131,6 +132,54 @@ func site_country() ([]News, error) {
 		})
 	}
 
+	log.Debugf("news len: %d", len(r))
+	return r, nil
+}
+
+func site_country() ([]News, error) {
+	var r []News
+
+	c := colly.NewCollector(colly.CheckHead())
+
+	c.OnResponse(func(res *colly.Response) {
+		log.Debugf("res: %s", string(res.Body))
+		js := gjson.Parse(string(res.Body))
+		for _, v := range js.Get("resultList").Array() {
+
+			date, err := time.Parse("2006-01-02", v.Get("publishTime").String()[:10])
+			if err != nil {
+				log.Warnf("time parse err: %s", err)
+				return
+			}
+
+			r = append(r, News{
+				Subject:  "国家税务局",
+				Title:    v.Get("title").String(),
+				Keywords: v.Get("customHs.C6").String(),
+				Url:      v.Get("url").String(),
+				Date:     NewDate(date),
+			})
+		}
+
+		log.Infof("news: %+v", r)
+	})
+
+	header := http.Header{}
+	header.Set("Content-Type", "application/x-www-form-urlencoded")
+	header.Set("Accept", "application/json, text/javascript, */*; q=0.01")
+	header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36 Edg/86.0.622.63")
+	header.Set("Cookie", "_Jo0OQK=489AD95E31076C994948A6846D8336D98C8257AC94DF7D464130F81A3E8B888DBA3885DA32B390D773C68D06652917D449A9AD2720A7C88A6BDF54051AD74DFC6CF01C83797AB67C7627EF4EAE0C6A2C5647EF4EAE0C6A2C56491A0E8A83004FA3FGJ1Z1dw==")
+
+	err := c.Request(
+		http.MethodPost,
+		"http://www.chinatax.gov.cn/api/query?siteCode=bm29000fgk&tab=all&key=9A9C42392D397C5CA6C1BF07E2E0AA6F",
+		bytes.NewBufferString("timeOption=0&page=1&pageSize=10&keyPlace=1&sort=dateDesc&qt=*"),
+		nil,
+		header,
+	)
+	if err != nil {
+		return nil, errors2.WithStack(err)
+	}
 	log.Debugf("news len: %d", len(r))
 	return r, nil
 }
