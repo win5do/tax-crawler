@@ -1,17 +1,24 @@
 package main
 
 import (
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 )
 
+func init() {
+	log.SetLevel(log.DebugLevel)
+}
+
 func TestSite1(t *testing.T) {
 	site_shanghai()
 }
 
-func TestSite2(t *testing.T) {
-	site_country()
+func TestSite_country(t *testing.T) {
+	r, err := site_country()
+	require.NoError(t, err)
+	t.Logf("%+v", r)
 }
 
 func TestApplyTpl(t *testing.T) {

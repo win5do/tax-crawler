@@ -2,15 +2,15 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"github.com/go-resty/resty/v2"
 	"github.com/gocolly/colly/v2"
 	errors2 "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/tidwall/gjson"
+	"net/url"
 	"text/template"
 	"time"
-	"github.com/tidwall/gjson"
 )
 
 const (
@@ -21,33 +21,30 @@ func main() {
 	var rootCmd = &cobra.Command{
 		Use:  "main",
 		Long: `tax crawler`,
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			log.SetLevel(log.DebugLevel)
 			log.SetReportCaller(true)
-			err := run()
-			if err != nil {
-				log.Debugf("err: %+v", err)
-				return
-			}
+			return run()
 		},
 	}
 	//rootCmd.Flags().StringVar(&flagRepo, "repo", "", "git clone http url")
 
 	err := rootCmd.Execute()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("err: %+v", err)
+		return
 	}
 
 }
 
 func run() error {
-	register(site_shanghai, site_country)
-
+	register(site_country, site_shanghai)
 	for _, fn := range callbackList {
 		news, err := fn()
 		if err != nil {
 			return errors2.WithStack(err)
 		}
+		log.Debugf("news: %+v", news)
 		err = handleNews(news)
 		if err != nil {
 			return errors2.WithStack(err)
@@ -89,52 +86,52 @@ func site_shanghai() ([]News, error) {
 	if err != nil {
 		return nil, errors2.WithStack(err)
 	}
+
+	log.Debugf("news len: %d", len(r))
 	return r, nil
 }
 
 func site_country() ([]News, error) {
 	var r []News
 
-	c := colly.NewCollector()
-	c.OnResponse(func(res *colly.Response) {
-
-		gjson.Get
-
-		mp := make(map[string]interface{})
-		err := json.Unmarshal(res.Body, &mp)
-		if err != nil {
-			log.Warnf("json unmarshal err: %s", err)
-			return
-		}
-
-		list := mp["resultList"].([]interface{})
-
-		var r []News
-		for _, v := range list {
-			obj := v.(map[string]interface{})
-
-			date, err := time.Parse("2006-01-02", obj["publishTime"].(string)[:10])
-			if err != nil {
-				log.Warnf("time parse err: %s", err)
-				return
-			}
-
-			r = append(r, News{
-				Subject:  "国家税务局",
-				Title:    obj["title"].(string),
-				Keywords: obj["customHs"].(map[string]interface{})["C6"].(string),
-				Url:      obj["url"].(string),
-				Date:     NewDate(date),
-			})
-		}
-
-		log.Infof("news: %+v", r)
-	})
-
-	err := c.Visit("http://www.chinatax.gov.cn/api/query?siteCode=bm29000fgk&tab=all&key=9A9C42392D397C5CA6C1BF07E2E0AA6F")
+	vals, err := url.ParseQuery("timeOption=0&page=1&pageSize=10&keyPlace=1&sort=dateDesc&qt=*")
 	if err != nil {
 		return nil, errors2.WithStack(err)
 	}
+
+	log.Debugf("%+v", vals)
+	//return nil, nil
+
+	res, err := resty.New().R().
+		SetHeader("Content-Type", "application/x-www-form-urlencoded").
+		SetHeader("Accept", "application/json").
+		SetFormData(map[string]string{
+			"sort": "dateDesc",
+		}).
+		Post("http://www.chinatax.gov.cn/api/query?siteCode=bm29000fgk&tab=all&key=9A9C42392D397C5CA6C1BF07E2E0AA6F")
+	if err != nil {
+		return nil, errors2.WithStack(err)
+	}
+
+	log.Debugf("res: %s", res.String())
+	js := gjson.Parse(string(res.Body()))
+	for _, v := range js.Get("resultList").Array() {
+
+		date, err := time.Parse("2006-01-02", v.Get("publishTime").String()[:10])
+		if err != nil {
+			return nil, errors2.WithStack(err)
+		}
+
+		r = append(r, News{
+			Subject:  "国家税务局",
+			Title:    v.Get("title").String(),
+			Keywords: v.Get("customHs.C6").String(),
+			Url:      v.Get("url").String(),
+			Date:     NewDate(date),
+		})
+	}
+
+	log.Debugf("news len: %d", len(r))
 	return r, nil
 }
 
@@ -164,7 +161,7 @@ func (s Date) String() string {
 
 func handleNews(news []News) error {
 	for _, v := range news {
-		if v.Date.Before(time.Now().Add(-24 * time.Hour)) {
+		if v.Date.Before(time.Now().Add(-30 * 24 * time.Hour)) {
 			continue
 		}
 
@@ -184,7 +181,7 @@ func handleNews(news []News) error {
 const newsTpl = `{
  "msgtype": "markdown",
  "markdown": {
-     "title":"{{.Subject}}",
+     "title":"CICD {{.Subject}}",
      "text": "# [{{.Title}}]({{.Url}}) \n> {{.Keywords}} \n\n {{.Date}} \n"
  }
 }`
@@ -206,6 +203,8 @@ type BotResult struct {
 }
 
 func notify(str string) error {
+	log.Debugf("notify msg: %s", str)
+
 	botRes := &BotResult{}
 
 	_, err := resty.New().R().
