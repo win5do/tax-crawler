@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tidwall/gjson"
 	"net/http"
-	"net/url"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -92,50 +92,6 @@ func site_shanghai() ([]News, error) {
 	return r, nil
 }
 
-func site_country_del() ([]News, error) {
-	var r []News
-
-	vals, err := url.ParseQuery("timeOption=0&page=1&pageSize=10&keyPlace=1&sort=dateDesc&qt=*")
-	if err != nil {
-		return nil, errors2.WithStack(err)
-	}
-
-	log.Debugf("%+v", vals)
-	//return nil, nil
-
-	res, err := resty.New().R().
-		SetHeader("Content-Type", "application/x-www-form-urlencoded").
-		SetHeader("Accept", "application/json").
-		SetFormData(map[string]string{
-			"sort": "dateDesc",
-		}).
-		Post("http://www.chinatax.gov.cn/api/query?siteCode=bm29000fgk&tab=all&key=9A9C42392D397C5CA6C1BF07E2E0AA6F")
-	if err != nil {
-		return nil, errors2.WithStack(err)
-	}
-
-	log.Debugf("res: %s", res.String())
-	js := gjson.Parse(string(res.Body()))
-	for _, v := range js.Get("resultList").Array() {
-
-		date, err := time.Parse("2006-01-02", v.Get("publishTime").String()[:10])
-		if err != nil {
-			return nil, errors2.WithStack(err)
-		}
-
-		r = append(r, News{
-			Subject:  "国家税务局",
-			Title:    v.Get("title").String(),
-			Keywords: v.Get("customHs.C6").String(),
-			Url:      v.Get("url").String(),
-			Date:     NewDate(date),
-		})
-	}
-
-	log.Debugf("news len: %d", len(r))
-	return r, nil
-}
-
 func site_country() ([]News, error) {
 	var r []News
 
@@ -173,7 +129,7 @@ func site_country() ([]News, error) {
 	err := c.Request(
 		http.MethodPost,
 		"http://www.chinatax.gov.cn/api/query?siteCode=bm29000fgk&tab=all&key=9A9C42392D397C5CA6C1BF07E2E0AA6F",
-		bytes.NewBufferString("timeOption=0&page=1&pageSize=10&keyPlace=1&sort=dateDesc&qt=*"),
+		strings.NewReader("timeOption=0&page=1&pageSize=10&keyPlace=1&sort=dateDesc&qt=*"),
 		nil,
 		header,
 	)
