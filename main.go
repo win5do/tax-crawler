@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"github.com/go-resty/resty/v2"
 	"github.com/gocolly/colly/v2"
-	"github.com/gocolly/colly/v2/debug"
 	errors2 "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -99,29 +98,29 @@ func site_country() ([]News, error) {
 	resty.New().R()
 
 	domain := "http://www.chinatax.gov.cn/api/query?siteCode=bm29000fgk&tab=all&key=9A9C42392D397C5CA6C1BF07E2E0AA6F"
+	var domainCookie []*http.Cookie
 
-	c := colly.NewCollector(colly.Debugger(&debug.LogDebugger{}))
-
+	// ---> get cookie
+	c := colly.NewCollector()
 	c.OnResponse(func(res *colly.Response) {
 		cookies := c.Cookies(domain)
 		if len(cookies) == 0 {
 			return
 		}
-		err := c.SetCookies(domain, c.Cookies(domain))
-		if err != nil {
-			log.Warnf("err: %s", err)
-			return
-		}
+		domainCookie = cookies
 	})
-
 	err := c.Visit(domain)
 	if err != nil {
 		return nil, errors2.WithStack(err)
 	}
 
-	c.Wait()
-
-	c.OnResponse(func(res *colly.Response) {
+	// --- get data
+	c2 := colly.NewCollector()
+	err = c2.SetCookies(domain, domainCookie)
+	if err != nil {
+		return nil, errors2.WithStack(err)
+	}
+	c2.OnResponse(func(res *colly.Response) {
 		log.Debugf("res: %s", string(res.Body))
 		js := gjson.Parse(string(res.Body))
 		for _, v := range js.Get("resultList").Array() {
@@ -149,7 +148,7 @@ func site_country() ([]News, error) {
 	header.Set("Accept", "application/json, text/javascript, */*; q=0.01")
 	header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36 Edg/86.0.622.63")
 
-	err = c.Request(
+	err = c2.Request(
 		http.MethodPost,
 		domain,
 		strings.NewReader("timeOption=0&page=1&pageSize=10&keyPlace=1&sort=dateDesc&qt=*"),
