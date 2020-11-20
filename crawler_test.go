@@ -24,7 +24,7 @@ func TestSite_country(t *testing.T) {
 }
 
 func TestApplyTpl(t *testing.T) {
-	r, err := applyTpl(News{
+	r, err := applyNews(News{
 		"x",
 		"x",
 		"x",

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"github.com/go-resty/resty/v2"
 	"github.com/gocolly/colly/v2"
 	errors2 "github.com/pkg/errors"
@@ -9,12 +8,7 @@ import (
 	"github.com/tidwall/gjson"
 	"net/http"
 	"strings"
-	"text/template"
 	"time"
-)
-
-const (
-	bot = "https://oapi.dingtalk.com/robot/send?access_token=4886c4e680073688ae1e2e247743c54a00c33bbf846f06c2cbc276eb91bc48d0"
 )
 
 type Callback func() ([]News, error)
@@ -105,7 +99,7 @@ func site_country() ([]News, error) {
 			})
 		}
 
-		log.Infof("news: %+v", r)
+		log.Debugf("news len: %d", len(r))
 	})
 
 	header := http.Header{}
@@ -151,13 +145,13 @@ func (s Date) String() string {
 	return s.Format("2006-01-02")
 }
 
-func handleNews(news []News) error {
+func handleNews(news []News, timing time.Time) error {
 	for _, v := range news {
-		if v.Date.Before(time.Now().Add(-30 * 24 * time.Hour)) {
+		if v.Date.Before(timing.Add(-time.Duration(flagCron) * time.Minute)) {
 			continue
 		}
 
-		msg, err := applyTpl(v)
+		msg, err := applyNews(v)
 		if err != nil {
 			return errors2.WithStack(err)
 		}
@@ -167,50 +161,5 @@ func handleNews(news []News) error {
 			return errors2.WithStack(err)
 		}
 	}
-	return nil
-}
-
-const newsTpl = `{
- "msgtype": "markdown",
- "markdown": {
-     "title":"CICD {{.Subject}}",
-     "text": "# [{{.Title}}]({{.Url}}) \n> {{.Keywords}} \n\n {{.Date}} \n"
- }
-}`
-
-var goTpl = template.Must(template.New("News").Parse(newsTpl))
-
-func applyTpl(data News) (string, error) {
-	r := bytes.NewBufferString("")
-	err := goTpl.Execute(r, data)
-	if err != nil {
-		return "", errors2.WithStack(err)
-	}
-	return r.String(), nil
-}
-
-type BotResult struct {
-	Errcode int    `json:"errcode"`
-	Errmsg  string `json:"errmsg"`
-}
-
-func notify(str string) error {
-	log.Debugf("notify msg: %s", str)
-
-	botRes := &BotResult{}
-
-	_, err := resty.New().R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(str).
-		SetResult(botRes).
-		Post(bot)
-	if err != nil {
-		return errors2.WithStack(err)
-	}
-
-	if botRes.Errcode != 0 {
-		return errors2.New(botRes.Errmsg)
-	}
-
 	return nil
 }
