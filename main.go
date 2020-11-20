@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/go-resty/resty/v2"
 	"github.com/gocolly/colly/v2"
+	"github.com/gocolly/colly/v2/debug"
 	errors2 "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -28,14 +29,12 @@ func main() {
 			return run()
 		},
 	}
-	//rootCmd.Flags().StringVar(&flagRepo, "repo", "", "git clone http url")
 
 	err := rootCmd.Execute()
 	if err != nil {
 		log.Fatalf("err: %+v", err)
 		return
 	}
-
 }
 
 func run() error {
@@ -97,7 +96,30 @@ func site_shanghai() ([]News, error) {
 func site_country() ([]News, error) {
 	var r []News
 
-	c := colly.NewCollector(colly.CheckHead())
+	resty.New().R()
+
+	domain := "http://www.chinatax.gov.cn/api/query?siteCode=bm29000fgk&tab=all&key=9A9C42392D397C5CA6C1BF07E2E0AA6F"
+
+	c := colly.NewCollector(colly.Debugger(&debug.LogDebugger{}))
+
+	c.OnResponse(func(res *colly.Response) {
+		cookies := c.Cookies(domain)
+		if len(cookies) == 0 {
+			return
+		}
+		err := c.SetCookies(domain, c.Cookies(domain))
+		if err != nil {
+			log.Warnf("err: %s", err)
+			return
+		}
+	})
+
+	err := c.Visit(domain)
+	if err != nil {
+		return nil, errors2.WithStack(err)
+	}
+
+	c.Wait()
 
 	c.OnResponse(func(res *colly.Response) {
 		log.Debugf("res: %s", string(res.Body))
@@ -126,11 +148,10 @@ func site_country() ([]News, error) {
 	header.Set("Content-Type", "application/x-www-form-urlencoded")
 	header.Set("Accept", "application/json, text/javascript, */*; q=0.01")
 	header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36 Edg/86.0.622.63")
-	header.Set("Cookie", "_Jo0OQK=489AD95E31076C994948A6846D8336D98C8257AC94DF7D464130F81A3E8B888DBA3885DA32B390D773C68D06652917D449A9AD2720A7C88A6BDF54051AD74DFC6CF01C83797AB67C7627EF4EAE0C6A2C5647EF4EAE0C6A2C56491A0E8A83004FA3FGJ1Z1dw==")
 
-	err := c.Request(
+	err = c.Request(
 		http.MethodPost,
-		"http://www.chinatax.gov.cn/api/query?siteCode=bm29000fgk&tab=all&key=9A9C42392D397C5CA6C1BF07E2E0AA6F",
+		domain,
 		strings.NewReader("timeOption=0&page=1&pageSize=10&keyPlace=1&sort=dateDesc&qt=*"),
 		nil,
 		header,
