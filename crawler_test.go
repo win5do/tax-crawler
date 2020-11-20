@@ -11,7 +11,7 @@ func init() {
 	log.SetLevel(log.DebugLevel)
 }
 
-func TestSite1(t *testing.T) {
+func TestSite_shanghai(t *testing.T) {
 	r, err := site_shanghai()
 	require.NoError(t, err)
 	t.Logf("%+v", r)
