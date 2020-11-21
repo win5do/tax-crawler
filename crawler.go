@@ -25,6 +25,7 @@ func site_shanghai() ([]News, error) {
 	domain := "http://shanghai.chinatax.gov.cn/zcfw/zcfgk/"
 
 	c := colly.NewCollector()
+	c.UserAgent = userAgent()
 
 	c.OnHTML("ul#zcfglist > li", func(e *colly.HTMLElement) {
 		date, err := time.Parse("2006-01-02", e.ChildText(".time"))
@@ -105,7 +106,7 @@ func site_country() ([]News, error) {
 	header := http.Header{}
 	header.Set("Content-Type", "application/x-www-form-urlencoded")
 	header.Set("Accept", "application/json, text/javascript, */*; q=0.01")
-	header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36 Edg/86.0.622.63")
+	header.Set("User-Agent", userAgent())
 
 	err = c2.Request(
 		http.MethodPost,
@@ -118,6 +119,10 @@ func site_country() ([]News, error) {
 		return nil, errors2.WithStack(err)
 	}
 	return r, nil
+}
+
+func userAgent() string {
+	return `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36 Edg/86.0.622.63`
 }
 
 type (

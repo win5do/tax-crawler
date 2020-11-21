@@ -12,4 +12,4 @@ run:
 	go run ./
 
 docker-run:
-	docker run -d --restart on-failure $(IMG) --verbose debug --cron 3 --range 21600
+	docker run -d --name tax --restart on-failure $(IMG) --verbose debug --cron 1 --range 21600
