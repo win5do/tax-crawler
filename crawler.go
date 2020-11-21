@@ -81,7 +81,7 @@ func site_country() ([]News, error) {
 		return nil, errors2.WithStack(err)
 	}
 	c2.OnResponse(func(res *colly.Response) {
-		log.Debugf("res: %s", string(res.Body))
+		log.Tracef("res: %s", string(res.Body))
 		js := gjson.Parse(string(res.Body))
 		for _, v := range js.Get("resultList").Array() {
 
@@ -164,6 +164,7 @@ func handleNews(news []News, timing time.Time) error {
 			}
 		} else {
 			// found, skip
+			log.Infof("already notify: %s", v.Title)
 			continue
 		}
 

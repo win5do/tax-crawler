@@ -80,12 +80,14 @@ func cronJob() error {
 }
 
 func crawler(timing time.Time) error {
+	log.Infof("begin crawler: %s", timing.Format(time.RFC3339))
+
 	for _, fn := range callbackList {
 		news, err := fn()
 		if err != nil {
 			return errors2.WithStack(err)
 		}
-		log.Debugf("news: %+v", news)
+		log.Tracef("news: %+v", news)
 		err = handleNews(news, timing)
 		if err != nil {
 			return errors2.WithStack(err)
