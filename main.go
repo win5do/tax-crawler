@@ -10,13 +10,14 @@ import (
 )
 
 const (
-	bot = "https://oapi.dingtalk.com/robot/send?access_token=4886c4e680073688ae1e2e247743c54a00c33bbf846f06c2cbc276eb91bc48d0"
+	bot = "https://oapi.dingtalk.com/robot/send?access_token=8dd63b49541ef8b6183df4a96a6f28efa22521ed0b6c1a4ee961c48297b4cdb9"
 )
 
 var (
 	flagBot      string
 	flagLogLevel string
 	flagCron     int
+	flagRange    int
 )
 
 func main() {
@@ -28,7 +29,7 @@ func main() {
 			if err != nil {
 				return err
 			}
-
+			log.Infof("log level: %s", lvl)
 			log.SetLevel(lvl)
 			log.SetReportCaller(true)
 			return run()
@@ -36,8 +37,9 @@ func main() {
 	}
 
 	rootCmd.Flags().StringVar(&flagBot, "bot", bot, "bot webhook addr")
-	rootCmd.Flags().IntVar(&flagCron, "cron", 30, "interval minutes")
-	rootCmd.Flags().StringVar(&flagLogLevel, "log-level", "info", "log level")
+	rootCmd.Flags().IntVar(&flagCron, "cron", 30, "job exec interval minutes")
+	rootCmd.Flags().IntVar(&flagRange, "range", 30, "news post range minutes")
+	rootCmd.Flags().StringVar(&flagLogLevel, "verbose", "info", "log level")
 
 	err := rootCmd.Execute()
 	if err != nil {
@@ -59,7 +61,10 @@ func cronJob() error {
 		err := crawler(time.Now()) // 记录当前时间点，防止 task 执行中取 now 因执行耗时不一致产生时间间隙
 		if err != nil {
 			log.Errorf("err: %+v", err)
-			_ = notify(applyMsg(fmt.Sprintf("err: %+v", err)))
+			err := notify(applyMsg(fmt.Sprintf("err: %+v", err)))
+			if err != nil {
+				log.Errorf("err: %+v", err)
+			}
 			return
 		}
 	})

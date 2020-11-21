@@ -6,6 +6,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	errors2 "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"strings"
 	"text/template"
 )
 
@@ -39,7 +40,7 @@ func applyNews(data News) (string, error) {
 }
 
 func applyMsg(msg string) string {
-	return fmt.Sprintf(msgStr, msg)
+	return fmt.Sprintf(msgStr, strings.ReplaceAll(msg, `"`, `'`))
 }
 
 type BotResult struct {

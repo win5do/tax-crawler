@@ -117,7 +117,6 @@ func site_country() ([]News, error) {
 	if err != nil {
 		return nil, errors2.WithStack(err)
 	}
-	log.Debugf("news len: %d", len(r))
 	return r, nil
 }
 
@@ -147,7 +146,7 @@ func (s Date) String() string {
 
 func handleNews(news []News, timing time.Time) error {
 	for _, v := range news {
-		if v.Date.Before(timing.Add(-time.Duration(flagCron) * time.Minute)) {
+		if v.Date.Before(timing.Add(-time.Duration(flagRange) * time.Minute)) {
 			continue
 		}
 
