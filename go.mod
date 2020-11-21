@@ -13,6 +13,7 @@ require (
 	github.com/spf13/cobra v1.1.1
 	github.com/stretchr/testify v1.3.0
 	github.com/tidwall/gjson v1.6.3
+	go.etcd.io/bbolt v1.3.2
 	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 )

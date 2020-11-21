@@ -151,7 +151,19 @@ func (s Date) String() string {
 
 func handleNews(news []News, timing time.Time) error {
 	for _, v := range news {
+		// date 只有日期，没有精确到时分秒，取最近一天的
 		if v.Date.Before(timing.Add(-time.Duration(flagRange) * time.Minute)) {
+			continue
+		}
+
+		key := hashKey(v.Url)
+		_, err := Find(key)
+		if err != nil {
+			if !errors2.Is(err, Err_not_found) {
+				return errors2.WithStack(err)
+			}
+		} else {
+			// found, skip
 			continue
 		}
 
@@ -161,6 +173,11 @@ func handleNews(news []News, timing time.Time) error {
 		}
 
 		err = notify(msg)
+		if err != nil {
+			return errors2.WithStack(err)
+		}
+
+		err = Save(key, "1")
 		if err != nil {
 			return errors2.WithStack(err)
 		}

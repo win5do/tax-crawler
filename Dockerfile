@@ -11,4 +11,5 @@ RUN chmod +x /main
 
 ENV TZ=Asia/Shanghai
 EXPOSE 8080
+VOLUME ["/opt/data"]
 ENTRYPOINT ["/main"]

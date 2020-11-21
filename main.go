@@ -6,6 +6,7 @@ import (
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"path"
 	"time"
 )
 
@@ -32,13 +33,14 @@ func main() {
 			log.Infof("log level: %s", lvl)
 			log.SetLevel(lvl)
 			log.SetReportCaller(true)
+			openDB(path.Join("/opt/data", "tax.db"))
 			return run()
 		},
 	}
 
 	rootCmd.Flags().StringVar(&flagBot, "bot", bot, "bot webhook addr")
 	rootCmd.Flags().IntVar(&flagCron, "cron", 30, "job exec interval minutes")
-	rootCmd.Flags().IntVar(&flagRange, "range", 30, "news post range minutes")
+	rootCmd.Flags().IntVar(&flagRange, "range", 24*60, "news post range minutes")
 	rootCmd.Flags().StringVar(&flagLogLevel, "verbose", "info", "log level")
 
 	err := rootCmd.Execute()
