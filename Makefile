@@ -12,4 +12,5 @@ run:
 	go run ./
 
 docker-run:
-	docker run -d --name tax --restart on-failure $(IMG) --verbose info --cron 3 --range 21600
+	docker volume create tax; \
+	docker run -d --name tax --restart on-failure -v tax:/opt/data $(IMG) --verbose debug --cron 3 --range 21600
