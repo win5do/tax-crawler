@@ -35,6 +35,6 @@ func TestNotifyNews(t *testing.T) {
 }
 
 func TestNotifyErr(t *testing.T) {
-	err := notify(applyMsg(fmt.Sprintf(`err: Get "http://xxx.com": context deadline exceeded (Client.Timeout exceeded while awaiting headers)\nmain.site_shanghai\n\t/go/src/app/crawler.go:47\nmain.crawler\n\t/go/src/app/main.go:79\nmain.cronJob.func1\n\t/go/src/app/main.go:61\ngithub.com/robfig/cron/v3.FuncJob.Run`)))
+	err := notify(applyMsg(fmt.Sprintf(`err: Get "http://xxx.com": context deadline exceeded (Client.Timeout exceeded while awaiting headers)\nmain.site_shanghai_html\n\t/go/src/app/crawler.go:47\nmain.crawler\n\t/go/src/app/main.go:79\nmain.cronJob.func1\n\t/go/src/app/main.go:61\ngithub.com/robfig/cron/v3.FuncJob.Run`)))
 	require.NoError(t, err)
 }

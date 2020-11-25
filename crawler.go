@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/go-resty/resty/v2"
 	"github.com/gocolly/colly/v2"
 	errors2 "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -19,16 +18,16 @@ func register(cb ...Callback) {
 	callbackList = append(callbackList, cb...)
 }
 
-func site_shanghai() ([]News, error) {
+func site_shanghai_html() ([]News, error) {
 	var r []News
 
-	domain := "http://shanghai.chinatax.gov.cn/zcfw/zcfgk/"
+	domain := "http://shanghai.chinatax.gov.cn/zcfw/"
 
 	c := colly.NewCollector()
 	c.UserAgent = userAgent()
 
-	c.OnHTML("ul#zcfglist > li", func(e *colly.HTMLElement) {
-		date, err := time.Parse("2006-01-02", e.ChildText(".time"))
+	c.OnHTML(".content li", func(e *colly.HTMLElement) {
+		date, err := time.Parse("2006-01-02", e.ChildText("span"))
 		if err != nil {
 			log.Warnf("time parse err: %s", err)
 			return
@@ -36,8 +35,8 @@ func site_shanghai() ([]News, error) {
 
 		r = append(r, News{
 			Subject:  "上海税务局",
-			Title:    e.ChildText(".title"),
-			Keywords: e.ChildText(".wh"),
+			Title:    e.ChildAttr("a[title]", "title"),
+			Keywords: "",
 			Url:      domain + e.ChildAttr("a[href]", "href")[2:], // `./xx/yy.html`
 			Date:     NewDate(date),
 		})
@@ -52,10 +51,44 @@ func site_shanghai() ([]News, error) {
 	return r, nil
 }
 
-func site_country() ([]News, error) {
+func site_country_html() ([]News, error) {
 	var r []News
 
-	resty.New().R()
+	domain := "http://www.chinatax.gov.cn"
+	path := "/chinatax/n810341/index.html"
+
+	c := colly.NewCollector()
+	c.UserAgent = userAgent()
+
+	c.OnHTML(".zxwj_bottom li", func(e *colly.HTMLElement) {
+		log.Trace("gugugu")
+		date, err := time.Parse("[01-02]", e.ChildText("a > span"))
+		if err != nil {
+			log.Warnf("time parse err: %s", err)
+			return
+		}
+		date = date.AddDate(time.Now().Year(), 0, 0)
+
+		r = append(r, News{
+			Subject:  "国家税务局",
+			Title:    e.ChildAttr("a[title]", "title"),
+			Keywords: "",
+			Url:      domain + e.ChildAttr("a[href]", "href"),
+			Date:     NewDate(date),
+		})
+	})
+
+	err := c.Visit(domain + path)
+	if err != nil {
+		return nil, errors2.WithStack(err)
+	}
+
+	log.Debugf("news len: %d", len(r))
+	return r, nil
+}
+
+func site_country_api() ([]News, error) {
+	var r []News
 
 	domain := "http://www.chinatax.gov.cn/api/query?siteCode=bm29000fgk&tab=all&key=9A9C42392D397C5CA6C1BF07E2E0AA6F"
 	var domainCookie []*http.Cookie

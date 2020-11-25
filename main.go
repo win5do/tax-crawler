@@ -51,7 +51,7 @@ func main() {
 }
 
 func run() error {
-	register(site_country, site_shanghai)
+	register(site_country_html, site_shanghai_html)
 
 	return cronJob()
 }
