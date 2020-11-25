@@ -85,14 +85,12 @@ func site_country_html() ([]News, error) {
 		cc := colly.NewCollector()
 		cc.UserAgent = userAgent()
 		cc.OnHTML(".share_l", func(e *colly.HTMLElement) {
-			e.ForEachWithBreak("span", func(i int, e *colly.HTMLElement) bool {
-				var err error
-				date, err = time.Parse("2006年01月02日", e.Text)
-				if err != nil {
-					log.Warnf("time parse err: %s", err)
-				}
-				return false
-			})
+			var err error
+			date, err = time.Parse("2006年01月02日", e.ChildText("span:first-child"))
+			if err != nil {
+				log.Warnf("time parse err: %s", err)
+				return
+			}
 		})
 
 		err := cc.Visit(url)
