@@ -59,7 +59,7 @@ func run() error {
 func cronJob() error {
 	c := cron.New()
 
-	_, err := c.AddFunc(fmt.Sprintf("@every %dm", flagCron), func() {
+	fn := func() {
 		err := crawler(time.Now()) // 记录当前时间点，防止 task 执行中取 now 因执行耗时不一致产生时间间隙
 		if err != nil {
 			log.Errorf("err: %+v", err)
@@ -69,7 +69,11 @@ func cronJob() error {
 			}
 			return
 		}
-	})
+	}
+
+	fn() // run immediately
+
+	_, err := c.AddFunc(fmt.Sprintf("@every %dm", flagCron), fn)
 	if err != nil {
 		return errors2.WithStack(err)
 	}
