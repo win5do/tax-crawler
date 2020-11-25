@@ -61,7 +61,6 @@ func site_country_html() ([]News, error) {
 	c.UserAgent = userAgent()
 
 	c.OnHTML(".zxwj_bottom li", func(e *colly.HTMLElement) {
-		log.Trace("gugugu")
 		date, err := time.Parse("[01-02]", e.ChildText("a > span"))
 		if err != nil {
 			log.Warnf("time parse err: %s", err)
@@ -74,6 +73,39 @@ func site_country_html() ([]News, error) {
 			Title:    e.ChildAttr("a[title]", "title"),
 			Keywords: "",
 			Url:      domain + e.ChildAttr("a[href]", "href"),
+			Date:     NewDate(date),
+		})
+	})
+
+	// 图解税收
+	c.OnHTML(".tjss li", func(e *colly.HTMLElement) {
+		url := domain + e.ChildAttr("a[href]", "href")
+
+		var date time.Time
+		cc := colly.NewCollector()
+		cc.UserAgent = userAgent()
+		cc.OnHTML(".share_l", func(e *colly.HTMLElement) {
+			e.ForEachWithBreak("span", func(i int, e *colly.HTMLElement) bool {
+				var err error
+				date, err = time.Parse("2006年01月02日", e.Text)
+				if err != nil {
+					log.Warnf("time parse err: %s", err)
+				}
+				return false
+			})
+		})
+
+		err := cc.Visit(url)
+		if err != nil {
+			log.Errorf("err: %+v", errors2.WithStack(err))
+			return
+		}
+
+		r = append(r, News{
+			Subject:  "国家税务局",
+			Title:    e.ChildAttr("a[title]", "title"),
+			Keywords: "",
+			Url:      url,
 			Date:     NewDate(date),
 		})
 	})
