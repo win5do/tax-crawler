@@ -19,6 +19,7 @@ var (
 	flagLogLevel string
 	flagCron     int
 	flagRange    int
+	flagDB       string
 )
 
 func main() {
@@ -33,7 +34,7 @@ func main() {
 			log.Infof("log level: %s", lvl)
 			log.SetLevel(lvl)
 			log.SetReportCaller(true)
-			openDB(path.Join("/opt/data", "tax.db"))
+			openDB(flagDB)
 			return run()
 		},
 	}
@@ -42,6 +43,7 @@ func main() {
 	rootCmd.Flags().IntVar(&flagCron, "cron", 30, "job exec interval minutes")
 	rootCmd.Flags().IntVar(&flagRange, "range", 24*60, "news post range minutes")
 	rootCmd.Flags().StringVar(&flagLogLevel, "verbose", "info", "log level")
+	rootCmd.Flags().StringVar(&flagDB, "db", path.Join("/opt/data", "tax.db"), "db path")
 
 	err := rootCmd.Execute()
 	if err != nil {

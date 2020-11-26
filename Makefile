@@ -8,9 +8,12 @@ push:
 
 image: build push
 
+ARGS := --verbose debug --cron 3 --range 21600
+
+run: ARGS := $(ARGS) --db tax.db
 run:
-	go run ./
+	go run . $(ARGS)
 
 docker-run:
 	docker volume create tax; \
-	docker run -d --name tax --restart on-failure -v tax:/opt/data $(IMG) --verbose debug --cron 3 --range 21600
+	docker run -d --name tax --restart on-failure -v tax:/opt/data $(IMG) $(ARGS)
