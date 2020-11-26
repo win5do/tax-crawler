@@ -23,8 +23,7 @@ func site_shanghai_html() ([]News, error) {
 
 	domain := "http://shanghai.chinatax.gov.cn/zcfw/"
 
-	c := colly.NewCollector()
-	c.UserAgent = userAgent()
+	c := NewCollector()
 
 	c.OnHTML(".content li", func(e *colly.HTMLElement) {
 		date, err := time.Parse("2006-01-02", e.ChildText("span"))
@@ -57,8 +56,7 @@ func site_country_html() ([]News, error) {
 	domain := "http://www.chinatax.gov.cn"
 	path := "/chinatax/n810341/index.html"
 
-	c := colly.NewCollector()
-	c.UserAgent = userAgent()
+	c := NewCollector()
 
 	c.OnHTML(".zxwj_bottom li", func(e *colly.HTMLElement) {
 		date, err := time.Parse("[01-02]", e.ChildText("a > span"))
@@ -82,8 +80,7 @@ func site_country_html() ([]News, error) {
 		url := domain + e.ChildAttr("a[href]", "href")
 
 		var date time.Time
-		cc := colly.NewCollector()
-		cc.UserAgent = userAgent()
+		cc := NewCollector()
 		cc.OnHTML(".share_l", func(e *colly.HTMLElement) {
 			var err error
 			date, err = time.Parse("2006年01月02日", e.ChildText("span:first-child"))
@@ -124,7 +121,7 @@ func site_country_api() ([]News, error) {
 	var domainCookie []*http.Cookie
 
 	// ---> get cookie
-	c := colly.NewCollector()
+	c := NewCollector()
 	c.OnResponse(func(res *colly.Response) {
 		cookies := c.Cookies(domain)
 		if len(cookies) == 0 {
@@ -138,7 +135,7 @@ func site_country_api() ([]News, error) {
 	}
 
 	// --- get data
-	c2 := colly.NewCollector()
+	c2 := NewCollector()
 	err = c2.SetCookies(domain, domainCookie)
 	if err != nil {
 		return nil, errors2.WithStack(err)
@@ -182,10 +179,6 @@ func site_country_api() ([]News, error) {
 		return nil, errors2.WithStack(err)
 	}
 	return r, nil
-}
-
-func userAgent() string {
-	return `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36 Edg/86.0.622.63`
 }
 
 type (
