@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gocolly/colly/v2"
+	log "github.com/sirupsen/logrus"
 	"time"
 )
 
@@ -10,7 +11,28 @@ func NewCollector() *colly.Collector {
 	c.UserAgent = userAgent()
 	c.SetRequestTimeout(10 * time.Second)
 
+	addRetry(c, 1) // retry 1 times
+
 	return c
+}
+
+func addRetry(c *colly.Collector, retryExpect uint) {
+	var retryCount uint = 0
+
+	c.OnError(func(r *colly.Response, err error) {
+		if err != nil {
+			log.Errorf("err: %+v", err)
+		}
+
+		if retryCount < retryExpect {
+			retryCount++
+			log.Infof("retry: %d", retryCount)
+			err := r.Request.Retry()
+			if err != nil {
+				log.Errorf("err: %+v", err)
+			}
+		}
+	})
 }
 
 func userAgent() string {
