@@ -1,3 +1,5 @@
+.PHONY: build push image run docker-run
+
 IMG := registry.cn-huhehaote.aliyuncs.com/feng-566/tax-crawler:v0.0.1
 
 build:
