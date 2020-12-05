@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
+	"path"
+	"time"
+
 	errors2 "github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"path"
-	"time"
 )
 
 const (
@@ -65,7 +66,7 @@ func cronJob() error {
 		err := crawler(time.Now()) // 记录当前时间点，防止 task 执行中取 now 因执行耗时不一致产生时间间隙
 		if err != nil {
 			log.Errorf("err: %+v", err)
-			err := notify(applyMsg(fmt.Sprintf("err: %+v", err)))
+			err := notify(applyMsg("error", fmt.Sprintf("err: %+v", err)))
 			if err != nil {
 				log.Errorf("err: %+v", err)
 			}

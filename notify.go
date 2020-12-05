@@ -3,11 +3,12 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"strings"
+	"text/template"
+
 	"github.com/go-resty/resty/v2"
 	errors2 "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"strings"
-	"text/template"
 )
 
 const (
@@ -22,7 +23,7 @@ const (
 	msgStr = `{
  "msgtype": "markdown",
  "markdown": {
-     "title":"税务",
+     "title":"税务 %s",
      "text": "%s"
  }
 }`
@@ -39,8 +40,8 @@ func applyNews(data News) (string, error) {
 	return r.String(), nil
 }
 
-func applyMsg(msg string) string {
-	return fmt.Sprintf(msgStr, strings.ReplaceAll(msg, `"`, `'`))
+func applyMsg(subject, msg string) string {
+	return fmt.Sprintf(msgStr, subject, strings.ReplaceAll(msg, `"`, `'`))
 }
 
 type BotResult struct {
