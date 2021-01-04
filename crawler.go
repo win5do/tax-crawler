@@ -1,13 +1,14 @@
 package main
 
 import (
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/gocolly/colly/v2"
 	errors2 "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
-	"net/http"
-	"strings"
-	"time"
 )
 
 type Callback func() ([]News, error)
@@ -64,7 +65,12 @@ func site_country_html() ([]News, error) {
 			log.Warnf("time parse err: %s", err)
 			return
 		}
-		date = date.AddDate(time.Now().Year(), 0, 0)
+
+		if date.Month() > time.Now().Month() {
+			date = date.AddDate(time.Now().Year()-1, 0, 0)
+		} else {
+			date = date.AddDate(time.Now().Year(), 0, 0)
+		}
 
 		r = append(r, News{
 			Subject:  "国家税务局",
